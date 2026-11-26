@@ -234,7 +234,7 @@ export const SettingsDetailScreen: React.FC = () => {
             </View>
           </GlassCard>
 
-          <GlassCard elevated padding={18} style={styles.card}>
+          <GlassCard padding={18} style={styles.card}>
             <ThemedText variant="cardTitle">Calculation Method</ThemedText>
             <View style={styles.chipGrid}>
               {(
@@ -296,7 +296,7 @@ export const SettingsDetailScreen: React.FC = () => {
             />
           </GlassCard>
 
-          <GlassCard elevated padding={18} style={styles.card}>
+          <GlassCard padding={18} style={styles.card}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <ThemedText variant="cardTitle">Prayer Notifications</ThemedText>
@@ -576,11 +576,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+    marginVertical: 2,
   },
   chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     borderWidth: 1,
   },
 });

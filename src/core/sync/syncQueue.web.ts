@@ -10,6 +10,7 @@ const HABITS_KEY = "newlife_web_habits_v3";
 const ROUTINES_KEY = "newlife_web_routines_v2";
 const PRAYER_LOGS_KEY = "newlife_web_prayer_logs_v1";
 const ALARMS_KEY = "newlife_web_alarms_v1";
+const WORKOUTS_KEY = "newlife_web_workouts_v1";
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -266,6 +267,44 @@ export const syncQueueDb = {
         });
       }
       writeJson(ALARMS_KEY, Array.from(map.values()));
+    }
+
+    const cloudWorkouts = changes.workouts ?? [];
+    if (cloudWorkouts.length > 0) {
+      const local = readJson<
+        {
+          id: string;
+          title: string;
+          workoutType: string;
+          startedAt: string;
+          durationMin: number;
+          perceivedEffort: number | null;
+          caloriesEst: number | null;
+          notes: string;
+          exercises: unknown[];
+        }[]
+      >(WORKOUTS_KEY, []);
+      const map = new Map(local.map((w) => [w.id, w]));
+      for (const cw of cloudWorkouts) {
+        const id = String(cw.id);
+        if (cw.deleted_at) {
+          map.delete(id);
+          continue;
+        }
+        const prev = map.get(id);
+        map.set(id, {
+          id,
+          title: String(cw.title ?? "Workout"),
+          workoutType: String(cw.workout_type ?? "strength"),
+          startedAt: String(cw.started_at ?? new Date().toISOString()),
+          durationMin: Number(cw.duration_min ?? 30),
+          perceivedEffort: cw.perceived_effort != null ? Number(cw.perceived_effort) : null,
+          caloriesEst: cw.calories_est != null ? Number(cw.calories_est) : null,
+          notes: String(cw.notes ?? ""),
+          exercises: prev?.exercises ?? [],
+        });
+      }
+      writeJson(WORKOUTS_KEY, Array.from(map.values()));
     }
   },
 };

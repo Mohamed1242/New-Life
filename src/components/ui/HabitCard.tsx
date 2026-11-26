@@ -16,12 +16,8 @@ export interface HabitCardProps {
   onLogUrge?: (id: string) => void;
 }
 
-export const HabitCard: React.FC<HabitCardProps> = ({
-  habit,
-  onToggle,
-  onPress,
-  onLogUrge,
-}) => {
+export const HabitCard: React.FC<HabitCardProps> = React.memo(
+  function HabitCard({ habit, onToggle, onPress, onLogUrge }) {
   const theme = useTheme();
   const { isRTL, t } = useTranslation();
 
@@ -109,7 +105,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
       </View>
     </GlassCard>
   );
-};
+});
 
 const styles = StyleSheet.create({
   row: {

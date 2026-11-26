@@ -33,8 +33,8 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   const { rSp, contentMaxWidth } = useResponsive();
 
   const bottomPad = includeTabBarClearance
-    ? insets.bottom + 98
-    : insets.bottom + rSp(20);
+    ? insets.bottom + 112
+    : insets.bottom + rSp(24);
 
   const inner = scrollable ? (
     <ScrollView

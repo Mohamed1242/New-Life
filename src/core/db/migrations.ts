@@ -517,6 +517,47 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 6,
+    name: "phase7_workouts_and_exercises",
+    up: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS workouts (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          workout_type TEXT NOT NULL DEFAULT 'strength' CHECK (workout_type IN ('strength', 'cardio', 'mobility', 'sports')),
+          started_at TEXT NOT NULL,
+          duration_min INTEGER NOT NULL DEFAULT 30,
+          perceived_effort INTEGER,
+          calories_est INTEGER,
+          notes TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'pending'
+        );
+
+        CREATE TABLE IF NOT EXISTS exercises (
+          id TEXT PRIMARY KEY,
+          workout_id TEXT NOT NULL,
+          exercise_name TEXT NOT NULL,
+          set_order INTEGER NOT NULL DEFAULT 1,
+          reps INTEGER,
+          weight_kg REAL,
+          duration_sec INTEGER,
+          distance_m INTEGER,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'pending',
+          FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_workouts_started ON workouts(started_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_exercises_workout ON exercises(workout_id, set_order);
+      `);
+    },
+  },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {

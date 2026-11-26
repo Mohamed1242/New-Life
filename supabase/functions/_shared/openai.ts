@@ -282,7 +282,7 @@ export async function generateCoachedResponse(params: {
           ],
           generationConfig: {
             temperature: 0.4,
-            maxOutputTokens: 280,
+            maxOutputTokens: 650,
             responseMimeType: "application/json",
             thinkingConfig: { thinkingBudget: 0 },
           },
@@ -392,10 +392,22 @@ export async function generateCoachedResponse(params: {
   const estimatedCostUsd = estimateCostUsd(chosenModel, promptTokens, completionTokens);
 
   const validatedActions = sanitizeSuggestedActions(parsedJson.suggestedActions);
-  const reply =
+  let reply =
     typeof parsedJson.reply === "string" && parsedJson.reply.trim().length > 0
       ? parsedJson.reply.trim()
       : buildFallbackReply(feature, context, userMessage).reply;
+
+  // Guard against double-encoded JSON inside reply string
+  if (reply.startsWith("{")) {
+    try {
+      const inner = JSON.parse(reply) as { reply?: unknown };
+      if (typeof inner.reply === "string" && inner.reply.trim()) {
+        reply = inner.reply.trim();
+      }
+    } catch {
+      // keep trimmed reply
+    }
+  }
 
   await supabase.from("ai_usage_logs").insert({
     user_id: userId,

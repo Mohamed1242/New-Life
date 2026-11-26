@@ -21,6 +21,28 @@ const INITIAL_MESSAGES: AssistantMessage[] = [
   },
 ];
 
+function extractCleanReply(raw: unknown): string {
+  if (typeof raw !== "string") return "I'm here to help you stay balanced.";
+  const trimmed = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "");
+  if (trimmed.startsWith("{")) {
+    try {
+      const obj = JSON.parse(trimmed) as { reply?: unknown };
+      if (typeof obj.reply === "string" && obj.reply.trim()) {
+        return obj.reply.trim();
+      }
+    } catch {
+      const match = trimmed.match(/"reply"\s*:\s*"((?:\\.|[^"\\])*)"/);
+      if (match?.[1]) {
+        return match[1].replace(/\\"/g, '"').replace(/\\n/g, " ").trim();
+      }
+    }
+  }
+  return trimmed || "I'm here to help you stay balanced.";
+}
+
 export function useAssistant() {
   const user = useAuthStore((s) => s.user);
   const tasksQuery = useTasksQuery();
@@ -47,8 +69,8 @@ export function useAssistant() {
             role: "assistant",
             text:
               params.mode === "weekly_review"
-                ? `Local Summary: You currently have ${done}/${tasks.length} tasks done today. Sign in via Profile -> Cloud Backup & Sync to unlock OpenAI-powered weekly coaching.`
-                : `Local Check-In: ${done} of ${tasks.length} tasks completed today. Sign in to connect your OpenAI coach with full context and smart reminders.`,
+                ? `Local Summary: You currently have ${done}/${tasks.length} tasks done today. Sign in via Profile -> Cloud Backup & Sync to unlock cloud AI coaching.`
+                : `Local Check-In: ${done} of ${tasks.length} tasks completed today. Sign in to connect your AI Coach with full context and smart reminders.`,
             timestamp: "Now",
             model: "local-offline",
           },
@@ -80,7 +102,7 @@ export function useAssistant() {
           id: data?.interactionId ?? `ai_${Date.now()}`,
           interactionId: data?.interactionId ?? null,
           role: "assistant",
-          text: data?.reply ?? "I'm here to help you stay balanced.",
+          text: extractCleanReply(data?.reply),
           timestamp: "Now",
           model: data?.model,
           cached: Boolean(data?.cached),

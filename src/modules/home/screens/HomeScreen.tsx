@@ -1,8 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScreenWrapper } from "@/components/common/ScreenWrapper";
 import { StatePlaceholder } from "@/components/common/StatePlaceholder";
 import { AppIcon } from "@/components/icons/AppIcon";
@@ -22,7 +20,6 @@ import { useHomeDashboard } from "../hooks/useHomeDashboard";
 
 export const HomeScreen: React.FC = () => {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const { isRTL, t } = useTranslation();
   const { isTablet } = useResponsive();
   const toggleHabitMutation = useToggleHabitMutation();
@@ -50,6 +47,9 @@ export const HomeScreen: React.FC = () => {
 
   const nextRoutine =
     routines.find((r) => r.todayStatus === "not_recorded") ?? routines[0];
+  const displayGreetingName = userName
+    ? userName.charAt(0).toUpperCase() + userName.slice(1)
+    : "Friend";
 
   return (
     <View style={styles.root}>
@@ -62,17 +62,29 @@ export const HomeScreen: React.FC = () => {
         >
           <View style={[styles.avatar, { backgroundColor: theme.primaryMuted }]}>
             <ThemedText variant="cardTitle" color="primary" weight="bold">
-              {userName.charAt(0).toUpperCase()}
+              {displayGreetingName.charAt(0).toUpperCase()}
             </ThemedText>
           </View>
           <View style={styles.headerSpacer} />
+          <Pressable
+            onPress={() => router.push("/(modals)/alarms")}
+            style={[
+              styles.headerIconBtn,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+              },
+            ]}
+          >
+            <AppIcon name="clock" size={18} color={theme.warning} />
+          </Pressable>
           <Pressable
             onPress={() => router.push("/(modals)/prayer-focus")}
             style={[
               styles.headerIconBtn,
               {
-                backgroundColor: theme.glassSurface,
-                borderColor: theme.glassBorder,
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
               },
             ]}
           >
@@ -83,8 +95,8 @@ export const HomeScreen: React.FC = () => {
             style={[
               styles.headerIconBtn,
               {
-                backgroundColor: theme.glassSurface,
-                borderColor: theme.glassBorder,
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
               },
             ]}
           >
@@ -94,7 +106,7 @@ export const HomeScreen: React.FC = () => {
 
         <View style={styles.greetingBlock}>
           <ThemedText variant="display">
-            {t("home.greetingMorning", { name: userName })}
+            {t("home.greetingMorning", { name: displayGreetingName })}
           </ThemedText>
           <ThemedText variant="body" color="secondary">
             {t("home.subtitle", "Small steps. Big changes.")}
@@ -180,17 +192,20 @@ export const HomeScreen: React.FC = () => {
                     color={theme.pillarSpirituality}
                   />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <ThemedText variant="caption" color="secondary">
-                    {t("home.nextPrayer", "Next Prayer")} ·{" "}
-                    {prayerSchedule.nextPrayer.label} at{" "}
+                <View style={{ flex: 1, gap: 2 }}>
+                  <ThemedText
+                    variant="caption"
+                    color="secondary"
+                    numberOfLines={1}
+                  >
+                    Next · {prayerSchedule.nextPrayer.label}{" "}
                     {prayerSchedule.nextPrayer.formattedTime}
                   </ThemedText>
-                  <ThemedText variant="cardTitle">
+                  <ThemedText variant="cardTitle" numberOfLines={1}>
                     {formatMinutesCountdown(
                       prayerSchedule.nextPrayer.minutesUntil,
                     )}{" "}
-                    · {prayerSchedule.cityName}
+                    · {prayerSchedule.cityName.split(",")[0]}
                   </ThemedText>
                 </View>
                 <Pressable
@@ -209,7 +224,7 @@ export const HomeScreen: React.FC = () => {
                     weight="semiBold"
                     style={{ color: theme.pillarSpirituality }}
                   >
-                    {t("home.prayerFocusAction", "Focus Mode")}
+                    Focus
                   </ThemedText>
                 </Pressable>
               </View>
@@ -251,6 +266,54 @@ export const HomeScreen: React.FC = () => {
           </View>
 
           <View style={isTablet ? styles.tabletCol : styles.stackCol}>
+            <View style={styles.quickToolsRow}>
+              <Pressable
+                onPress={() => router.push("/(modals)/prayers")}
+                style={[
+                  styles.quickChip,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.cardBorder,
+                  },
+                ]}
+              >
+                <AppIcon name="compass" size={14} color={theme.pillarSpirituality} />
+                <ThemedText variant="caption" weight="semiBold">
+                  Prayers
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/(modals)/workout-editor")}
+                style={[
+                  styles.quickChip,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.cardBorder,
+                  },
+                ]}
+              >
+                <AppIcon name="dumbbell" size={14} color={theme.pillarHealth} />
+                <ThemedText variant="caption" weight="semiBold">
+                  Workout
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/(modals)/alarms")}
+                style={[
+                  styles.quickChip,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.cardBorder,
+                  },
+                ]}
+              >
+                <AppIcon name="clock" size={14} color={theme.warning} />
+                <ThemedText variant="caption" weight="semiBold">
+                  Alarms
+                </ThemedText>
+              </Pressable>
+            </View>
+
             <View
               style={[
                 styles.sectionHeader,
@@ -260,11 +323,25 @@ export const HomeScreen: React.FC = () => {
               <ThemedText variant="h2">
                 {t("home.todaysSchedule", "Today's Tasks")}
               </ThemedText>
-              <Pressable onPress={() => router.push("/(tabs)/tasks")}>
-                <ThemedText variant="caption" color="primary" weight="semiBold">
-                  {t("common.seeAll", "See all")} →
-                </ThemedText>
-              </Pressable>
+              <View style={styles.headerActionsRow}>
+                <Pressable
+                  onPress={() => router.push("/(modals)/task-editor")}
+                  style={[
+                    styles.addPill,
+                    { backgroundColor: theme.primaryMuted },
+                  ]}
+                >
+                  <AppIcon name="plus" size={13} color={theme.primary} />
+                  <ThemedText variant="caption" color="primary" weight="semiBold">
+                    New
+                  </ThemedText>
+                </Pressable>
+                <Pressable onPress={() => router.push("/(tabs)/tasks")}>
+                  <ThemedText variant="caption" color="primary" weight="semiBold">
+                    {t("common.seeAll", "See all")} →
+                  </ThemedText>
+                </Pressable>
+              </View>
             </View>
 
             {isLoading ? (
@@ -341,23 +418,6 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
       </ScreenWrapper>
-
-      <Pressable
-        onPress={() => router.push("/(modals)/task-editor")}
-        accessibilityRole="button"
-        accessibilityLabel={t("tasks.addNewTask", "Add New Task")}
-        style={[
-          styles.fab,
-          { bottom: Math.max(insets.bottom, 10) + 82 },
-        ]}
-      >
-        <LinearGradient
-          colors={theme.gradientPrimary}
-          style={styles.fabGradient}
-        >
-          <AppIcon name="plus" size={24} color="#FFFFFF" />
-        </LinearGradient>
-      </Pressable>
     </View>
   );
 };
@@ -429,26 +489,36 @@ const styles = StyleSheet.create({
   sectionHeader: {
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 2,
+    marginTop: 4,
+  },
+  headerActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  addPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 9999,
+  },
+  quickToolsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  quickChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   taskList: {
     gap: 10,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    borderRadius: 28,
-    overflow: "hidden",
-    shadowColor: "#5044E2",
-    shadowOpacity: 0.32,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-  fabGradient: {
-    width: 54,
-    height: 54,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

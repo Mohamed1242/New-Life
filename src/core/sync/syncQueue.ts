@@ -11,6 +11,8 @@ export type SyncTableName =
   | "negative_habit_logs"
   | "routines"
   | "routine_logs"
+  | "workouts"
+  | "exercises"
   | "prayer_logs"
   | "reminders";
 
@@ -352,6 +354,39 @@ export const syncQueueDb = {
             String(rem.created_at ?? now),
             String(rem.updated_at ?? now),
             rem.deleted_at ? String(rem.deleted_at) : null,
+          ],
+        );
+      }
+
+      const workouts = changes.workouts ?? [];
+      for (const w of workouts) {
+        await db.runAsync(
+          `INSERT INTO workouts (id, title, workout_type, started_at, duration_min, perceived_effort, calories_est, notes, created_at, updated_at, deleted_at, sync_status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'synced')
+           ON CONFLICT(id) DO UPDATE SET
+             title = excluded.title,
+             workout_type = excluded.workout_type,
+             started_at = excluded.started_at,
+             duration_min = excluded.duration_min,
+             perceived_effort = excluded.perceived_effort,
+             calories_est = excluded.calories_est,
+             notes = excluded.notes,
+             updated_at = excluded.updated_at,
+             deleted_at = excluded.deleted_at,
+             sync_status = 'synced'
+           WHERE workouts.updated_at < excluded.updated_at`,
+          [
+            String(w.id),
+            String(w.title ?? "Workout"),
+            String(w.workout_type ?? "strength"),
+            String(w.started_at ?? now),
+            Number(w.duration_min ?? 30),
+            w.perceived_effort != null ? Number(w.perceived_effort) : null,
+            w.calories_est != null ? Number(w.calories_est) : null,
+            String(w.notes ?? ""),
+            String(w.created_at ?? now),
+            String(w.updated_at ?? now),
+            w.deleted_at ? String(w.deleted_at) : null,
           ],
         );
       }

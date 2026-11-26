@@ -66,6 +66,10 @@ function RootNavigator() {
           options={{ presentation: "fullScreenModal", animation: "fade" }}
         />
         <Stack.Screen
+          name="(modals)/workout-editor"
+          options={{ presentation: "modal", animation: "slide_from_bottom" }}
+        />
+        <Stack.Screen
           name="(modals)/settings/[section]"
           options={{ animation: "slide_from_right" }}
         />

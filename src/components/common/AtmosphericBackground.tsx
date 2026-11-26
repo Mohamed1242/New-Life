@@ -32,10 +32,10 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({
           {
             backgroundColor:
               variant === "prayer"
-                ? "rgba(42, 184, 141, 0.12)"
+                ? "rgba(42, 184, 141, 0.10)"
                 : theme.mode === "dark"
-                  ? "rgba(124, 114, 255, 0.16)"
-                  : "rgba(112, 100, 247, 0.14)",
+                  ? "rgba(124, 114, 255, 0.10)"
+                  : "rgba(112, 100, 247, 0.08)",
           },
         ]}
       />
@@ -46,10 +46,10 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({
           {
             backgroundColor:
               variant === "prayer"
-                ? "rgba(91, 79, 233, 0.12)"
+                ? "rgba(91, 79, 233, 0.09)"
                 : theme.mode === "dark"
-                  ? "rgba(52, 211, 153, 0.08)"
-                  : "rgba(42, 184, 141, 0.10)",
+                  ? "rgba(52, 211, 153, 0.06)"
+                  : "rgba(42, 184, 141, 0.06)",
           },
         ]}
       />

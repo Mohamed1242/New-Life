@@ -16,11 +16,8 @@ export interface TaskRowCardProps {
   onPress?: (task: TaskItem) => void;
 }
 
-export const TaskRowCard: React.FC<TaskRowCardProps> = ({
-  task,
-  onToggle,
-  onPress,
-}) => {
+export const TaskRowCard: React.FC<TaskRowCardProps> = React.memo(
+  function TaskRowCard({ task, onToggle, onPress }) {
   const theme = useTheme();
   const { isRTL } = useTranslation();
 
@@ -131,7 +128,7 @@ export const TaskRowCard: React.FC<TaskRowCardProps> = ({
       </View>
     </GlassCard>
   );
-};
+});
 
 const styles = StyleSheet.create({
   row: {

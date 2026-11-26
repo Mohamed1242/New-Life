@@ -37,7 +37,7 @@ export const FloatingTabBar: React.FC<FloatingTabBarProps> = ({
       pointerEvents="box-none"
       style={[
         styles.outerWrapper,
-        { bottom: Math.max(insets.bottom, 10) + 6 },
+        { bottom: Math.max(insets.bottom, 10) + 4 },
       ]}
     >
       <View

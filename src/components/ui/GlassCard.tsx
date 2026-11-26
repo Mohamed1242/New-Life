@@ -1,5 +1,12 @@
 import React from "react";
-import { Platform, Pressable, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import {
+  Platform,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from "react-native";
 import { BlurView } from "expo-blur";
 import Animated, {
   useAnimatedStyle,
@@ -13,6 +20,8 @@ import { useTheme } from "@/theme/tokens";
 export interface GlassCardProps {
   children: React.ReactNode;
   elevated?: boolean;
+  /** Selective glassmorphism: default solid crisp surface for readability; "glass" for hero/highlight cards */
+  variant?: "surface" | "glass";
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   padding?: number;
@@ -24,6 +33,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export const GlassCard: React.FC<GlassCardProps> = ({
   children,
   elevated = false,
+  variant,
   onPress,
   style,
   padding = 16,
@@ -33,30 +43,40 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const reducedMotion = useReducedMotion();
   const scale = useSharedValue(1);
 
+  const resolvedVariant = variant ?? (elevated ? "glass" : "surface");
+  const isGlass = resolvedVariant === "glass";
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const surfaceColor = elevated
-    ? theme.glassSurfaceElevated
-    : theme.glassSurface;
+  const surfaceColor = isGlass
+    ? elevated
+      ? theme.glassSurfaceElevated
+      : theme.glassSurface
+    : theme.card;
+
+  const borderColor = isGlass ? theme.glassBorder : theme.cardBorder;
 
   const containerStyles: StyleProp<ViewStyle> = [
     styles.card,
     {
       borderRadius,
-      borderColor: theme.glassBorder,
-      backgroundColor: Platform.OS === "ios" ? "transparent" : surfaceColor,
+      borderColor,
+      backgroundColor:
+        isGlass && Platform.OS === "ios" ? "transparent" : surfaceColor,
     },
-    theme.mode === "light" ? GlassShadowLight : undefined,
+    theme.mode === "light" && (elevated || !isGlass)
+      ? GlassShadowLight
+      : undefined,
     style,
   ];
 
-  const innerContent = (
+  const innerContent = isGlass ? (
     <>
       {Platform.OS === "ios" ? (
         <BlurView
-          intensity={elevated ? 42 : 28}
+          intensity={elevated ? 36 : 24}
           tint={theme.blurTint}
           style={[StyleSheet.absoluteFill, { borderRadius }]}
         />
@@ -72,6 +92,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       />
       <View style={{ padding }}>{children}</View>
     </>
+  ) : (
+    <View style={{ padding }}>{children}</View>
   );
 
   if (!onPress) {
@@ -83,12 +105,12 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       onPress={onPress}
       onPressIn={() => {
         if (!reducedMotion) {
-          scale.set(withSpring(0.975, { damping: 18, stiffness: 260 }));
+          scale.set(withSpring(0.98, { damping: 20, stiffness: 280 }));
         }
       }}
       onPressOut={() => {
         if (!reducedMotion) {
-          scale.set(withSpring(1, { damping: 18, stiffness: 260 }));
+          scale.set(withSpring(1, { damping: 20, stiffness: 280 }));
         }
       }}
       style={[containerStyles, animatedStyle]}
