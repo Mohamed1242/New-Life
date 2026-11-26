@@ -6,6 +6,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import { AppErrorBoundary } from "@/components/common/AppErrorBoundary";
 import { I18nProvider } from "@/i18n";
 import { useSyncLifecycle } from "@/core/sync/useSyncLifecycle";
 import { queryClient } from "@/lib/queryClient";
@@ -46,6 +47,22 @@ function RootNavigator() {
         />
         <Stack.Screen
           name="(modals)/prayer-focus"
+          options={{ presentation: "fullScreenModal", animation: "fade" }}
+        />
+        <Stack.Screen
+          name="(modals)/prayers"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="(modals)/alarms"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="(modals)/alarm-editor"
+          options={{ presentation: "modal", animation: "slide_from_bottom" }}
+        />
+        <Stack.Screen
+          name="(modals)/alarm-ring"
           options={{ presentation: "fullScreenModal", animation: "fade" }}
         />
         <Stack.Screen
@@ -90,22 +107,24 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider>
-            <I18nProvider>
-              <ToastProvider>
-                <DialogProvider>
-                  <NotificationProvider>
-                    <RootNavigator />
-                  </NotificationProvider>
-                </DialogProvider>
-              </ToastProvider>
-            </I18nProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <AppErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider>
+              <I18nProvider>
+                <ToastProvider>
+                  <DialogProvider>
+                    <NotificationProvider>
+                      <RootNavigator />
+                    </NotificationProvider>
+                  </DialogProvider>
+                </ToastProvider>
+              </I18nProvider>
+            </ThemeProvider>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </AppErrorBoundary>
   );
 }

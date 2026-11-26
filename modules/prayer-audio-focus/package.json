@@ -1,0 +1,6 @@
+{
+  "name": "prayer-audio-focus",
+  "version": "1.0.0",
+  "description": "Local Expo module for Android transient Audio Focus ducking during Prayer Focus Mode.",
+  "main": "index.ts"
+}

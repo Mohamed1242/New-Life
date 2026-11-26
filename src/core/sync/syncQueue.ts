@@ -289,6 +289,72 @@ export const syncQueueDb = {
           ],
         );
       }
+
+      const prayerLogs = changes.prayer_logs ?? [];
+      for (const p of prayerLogs) {
+        await db.runAsync(
+          `INSERT INTO prayer_logs (id, prayer_date, prayer_name, status, auto_muted_triggered, logged_at, created_at, updated_at, deleted_at, sync_status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'synced')
+           ON CONFLICT(prayer_date, prayer_name) DO UPDATE SET
+             status = excluded.status,
+             auto_muted_triggered = excluded.auto_muted_triggered,
+             logged_at = excluded.logged_at,
+             updated_at = excluded.updated_at,
+             deleted_at = excluded.deleted_at,
+             sync_status = 'synced'
+           WHERE prayer_logs.updated_at < excluded.updated_at`,
+          [
+            String(p.id),
+            String(p.prayer_date),
+            String(p.prayer_name),
+            String(p.status ?? "not_recorded"),
+            p.auto_muted_triggered ? 1 : 0,
+            String(p.logged_at ?? now),
+            String(p.created_at ?? now),
+            String(p.updated_at ?? now),
+            p.deleted_at ? String(p.deleted_at) : null,
+          ],
+        );
+      }
+
+      const reminders = changes.reminders ?? [];
+      for (const rem of reminders) {
+        if (rem.entity_type !== "custom_alarm") continue;
+        const triggerStr = String(rem.trigger_time ?? "06:00");
+        const [hStr, mStr] = triggerStr.split(":");
+        const hour = Math.min(23, Math.max(0, Number(hStr ?? 6)));
+        const minute = Math.min(59, Math.max(0, Number(mStr ?? 0)));
+        const repeatStr = String(rem.repeat_rule ?? "[0,1,2,3,4,5,6]");
+        const daysJson = repeatStr.startsWith("[") ? repeatStr : "[0,1,2,3,4,5,6]";
+
+        await db.runAsync(
+          `INSERT INTO alarms (id, label, hour, minute, days_json, sound_key, snooze_minutes, is_enabled, vibrate, created_at, updated_at, deleted_at, sync_status)
+           VALUES (?, ?, ?, ?, ?, ?, 5, ?, 1, ?, ?, ?, 'synced')
+           ON CONFLICT(id) DO UPDATE SET
+             label = excluded.label,
+             hour = excluded.hour,
+             minute = excluded.minute,
+             days_json = excluded.days_json,
+             sound_key = excluded.sound_key,
+             is_enabled = excluded.is_enabled,
+             updated_at = excluded.updated_at,
+             deleted_at = excluded.deleted_at,
+             sync_status = 'synced'
+           WHERE alarms.updated_at < excluded.updated_at`,
+          [
+            String(rem.id),
+            String(rem.title ?? "Wake-Up Alarm"),
+            hour,
+            minute,
+            daysJson,
+            String(rem.sound_key ?? "gentle_dawn"),
+            rem.is_enabled ? 1 : 0,
+            String(rem.created_at ?? now),
+            String(rem.updated_at ?? now),
+            rem.deleted_at ? String(rem.deleted_at) : null,
+          ],
+        );
+      }
     });
   },
 };

@@ -1,5 +1,5 @@
-import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import React, { useState } from "react";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { ScreenWrapper } from "@/components/common/ScreenWrapper";
 import { StatePlaceholder } from "@/components/common/StatePlaceholder";
@@ -19,15 +19,38 @@ import {
 } from "@/modules/routine/hooks/useRoutine";
 import { toast } from "@/shared/toast/ToastContext";
 import { useTheme } from "@/theme/tokens";
+import type { ReflectionMood } from "../db/reflectionRepository";
 import { useInsights } from "../hooks/useInsights";
 
 export const InsightsScreen: React.FC = () => {
   const theme = useTheme();
   const { t, isRTL } = useTranslation();
-  const { range, setRange, summary, isLoading, isError, refetch } = useInsights();
+  const {
+    range,
+    setRange,
+    summary,
+    reflections,
+    currentWeekStartIso,
+    saveReflectionMutation,
+    isLoading,
+    isError,
+    refetch,
+  } = useInsights();
   const challengesQuery = useChallengesQuery();
   const toggleChallengeMutation = useToggleChallengeMutation();
   const logChallengeMutation = useLogChallengeDayMutation();
+
+  const [showFormula, setShowFormula] = useState(false);
+  const currentReflection = reflections.find(
+    (r) => r.weekStartIso === currentWeekStartIso,
+  );
+  const [mood, setMood] = useState<ReflectionMood>(
+    currentReflection?.energyMood ?? "balanced",
+  );
+  const [highlight, setHighlight] = useState(currentReflection?.highlight ?? "");
+  const [adjustment, setAdjustment] = useState(
+    currentReflection?.adjustment ?? "",
+  );
 
   const colorForPillar = (pillar: "spirituality" | "health" | "productivity") => {
     switch (pillar) {
@@ -42,6 +65,15 @@ export const InsightsScreen: React.FC = () => {
 
   const challenges = challengesQuery.data ?? [];
 
+  const handleSaveReflection = async () => {
+    await saveReflectionMutation.mutateAsync({
+      energyMood: mood,
+      highlight,
+      adjustment,
+    });
+    toast.success("Weekly reflection saved");
+  };
+
   return (
     <ScreenWrapper>
       <View
@@ -51,17 +83,24 @@ export const InsightsScreen: React.FC = () => {
         ]}
       >
         <ThemedText variant="h1">{t("insights.title", "Insights")}</ThemedText>
-        <View
+        <Pressable
+          onPress={() => setShowFormula((v) => !v)}
           style={[
             styles.calendarBadge,
             {
-              backgroundColor: theme.glassSurface,
-              borderColor: theme.glassBorder,
+              backgroundColor: showFormula
+                ? theme.primaryMuted
+                : theme.glassSurface,
+              borderColor: showFormula ? theme.primary : theme.glassBorder,
             },
           ]}
         >
-          <AppIcon name="calendar" size={18} color={theme.text} />
-        </View>
+          <AppIcon
+            name="info"
+            size={18}
+            color={showFormula ? theme.primary : theme.text}
+          />
+        </Pressable>
       </View>
 
       <SegmentedControl
@@ -69,13 +108,29 @@ export const InsightsScreen: React.FC = () => {
         onChange={setRange}
         options={[
           { value: "week", label: t("insights.week", "This Week") },
-          { value: "month", label: t("insights.month", "This Month") },
-          { value: "year", label: t("insights.year", "This Year") },
+          { value: "month", label: t("insights.month", "30 Days") },
+          { value: "year", label: t("insights.year", "90 Days") },
         ]}
       />
 
+      {showFormula ? (
+        <GlassCard elevated padding={16} style={styles.cardGap}>
+          <ThemedText variant="cardTitle">
+            How Every Metric Is Calculated
+          </ThemedText>
+          {summary.calculationNotes.map((note, idx) => (
+            <ThemedText key={idx} variant="caption" color="secondary">
+              • {note}
+            </ThemedText>
+          ))}
+        </GlassCard>
+      ) : null}
+
       {isLoading ? (
-        <StatePlaceholder variant="loading" title="Calculating recorded progress..." />
+        <StatePlaceholder
+          variant="loading"
+          title="Calculating recorded progress..."
+        />
       ) : isError ? (
         <StatePlaceholder
           variant="error"
@@ -85,9 +140,16 @@ export const InsightsScreen: React.FC = () => {
       ) : (
         <>
           <GlassCard elevated padding={18} style={styles.cardGap}>
-            <ThemedText variant="bodyMedium" color="secondary">
-              {t("insights.overallProgress", "Overall Progress")} (Recorded Data)
-            </ThemedText>
+            <View style={styles.headerRow}>
+              <ThemedText variant="bodyMedium" color="secondary">
+                {t("insights.overallProgress", "Recorded Progress")}
+              </ThemedText>
+              <Pressable onPress={() => setShowFormula((v) => !v)}>
+                <ThemedText variant="micro" color="primary" weight="semiBold">
+                  {showFormula ? "Hide formulas" : "How calculated?"}
+                </ThemedText>
+              </Pressable>
+            </View>
             <View
               style={[
                 styles.kpiRow,
@@ -101,22 +163,85 @@ export const InsightsScreen: React.FC = () => {
             </View>
             <View style={styles.miniMetrics}>
               <ThemedText variant="caption" color="secondary">
-                Today: {summary.dailyCompletionRate}% · Weekly Consistency: {summary.weeklyConsistencyPct}%
+                Today: {summary.dailyCompletionRate}% · 7d Avg:{" "}
+                {summary.weeklyConsistencyPct}% · 30d Avg:{" "}
+                {summary.monthlyConsistencyPct}%
               </ThemedText>
             </View>
             <TrendLineChart values={summary.trendPoints} />
+          </GlassCard>
+
+          {/* Weekly Report & Lifestyle Improvement Indicators */}
+          <GlassCard padding={16} style={styles.cardGap}>
+            <View style={styles.headerRow}>
+              <ThemedText variant="h2">Weekly Report</ThemedText>
+              <ThemedText variant="micro" color="primary" weight="semiBold">
+                {summary.lifestyleIndicators.overallDirection === "improving"
+                  ? "Trending Up"
+                  : summary.lifestyleIndicators.overallDirection === "needs_rest"
+                    ? "Lighter Pacing"
+                    : "Steady"}
+              </ThemedText>
+            </View>
+            <ThemedText variant="cardTitle">
+              {summary.weeklyReport.headline}
+            </ThemedText>
+            {summary.weeklyReport.highlights.map((line, i) => (
+              <ThemedText key={i} variant="caption" color="secondary">
+                • {line}
+              </ThemedText>
+            ))}
+            <ThemedText variant="caption" color="primary">
+              {summary.weeklyReport.focusSuggestion}
+            </ThemedText>
+
+            <View style={styles.indicatorRow}>
+              <View style={[styles.indBox, { backgroundColor: theme.element }]}>
+                <ThemedText variant="h2" color="primary">
+                  {summary.goalMetrics.goalCompletionPct}%
+                </ThemedText>
+                <ThemedText variant="micro" color="secondary">
+                  Goal Progress
+                </ThemedText>
+              </View>
+              <View style={[styles.indBox, { backgroundColor: theme.element }]}>
+                <ThemedText variant="h2">
+                  {summary.lifestyleIndicators.prayerConsistencyPct}%
+                </ThemedText>
+                <ThemedText variant="micro" color="secondary">
+                  Prayer 7d
+                </ThemedText>
+              </View>
+              <View style={[styles.indBox, { backgroundColor: theme.element }]}>
+                <ThemedText variant="h2">
+                  {summary.positiveHabitConsistencyPct}%
+                </ThemedText>
+                <ThemedText variant="micro" color="secondary">
+                  Habits Avg
+                </ThemedText>
+              </View>
+            </View>
+
+            <Button
+              title="Ask AI Coach for Deeper Weekly Review"
+              variant="outline"
+              size="sm"
+              onPress={() => router.push("/(tabs)/assistant")}
+            />
           </GlassCard>
 
           {/* Positive & Negative Behavior Trends */}
           <GlassCard padding={16} style={styles.cardGap}>
             <ThemedText variant="h2">Behavioral Trends</ThemedText>
             <View style={styles.trendRow}>
-              <View style={[styles.trendIcon, { backgroundColor: theme.successMuted }]}>
+              <View
+                style={[styles.trendIcon, { backgroundColor: theme.successMuted }]}
+              >
                 <AppIcon name="trending-up" size={16} color={theme.success} />
               </View>
               <View style={{ flex: 1 }}>
                 <ThemedText variant="bodyMedium" weight="semiBold">
-                  Positive Habits
+                  Positive Habit Consistency
                 </ThemedText>
                 <ThemedText variant="caption" color="secondary">
                   {summary.positiveTrendLabel}
@@ -124,12 +249,14 @@ export const InsightsScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.trendRow}>
-              <View style={[styles.trendIcon, { backgroundColor: theme.primaryMuted }]}>
+              <View
+                style={[styles.trendIcon, { backgroundColor: theme.primaryMuted }]}
+              >
                 <AppIcon name="shield" size={16} color={theme.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <ThemedText variant="bodyMedium" weight="semiBold">
-                  Habit Reduction ({summary.negativeTrend.occurrencesThisWeek} occurrences / {summary.negativeTrend.urgesResistedThisWeek} urges paused)
+                  Negative Habit Reduction ({summary.negativeTrend.occurrencesThisWeek} this wk / {summary.negativeTrend.urgesResistedThisWeek} urges paused)
                 </ThemedText>
                 <ThemedText variant="caption" color="secondary">
                   {summary.negativeTrend.improvementLabel}
@@ -190,7 +317,12 @@ export const InsightsScreen: React.FC = () => {
                       color={colorForPillar(item.pillar)}
                       centerLabel={`${item.pct}%`}
                     />
-                    <ThemedText variant="micro" weight="medium" center numberOfLines={1}>
+                    <ThemedText
+                      variant="micro"
+                      weight="medium"
+                      center
+                      numberOfLines={1}
+                    >
                       {item.label}
                     </ThemedText>
                     <ThemedText variant="micro" color="muted" center>
@@ -209,11 +341,15 @@ export const InsightsScreen: React.FC = () => {
                 { flexDirection: isRTL ? "row-reverse" : "row" },
               ]}
             >
-              <View style={[styles.starBox, { backgroundColor: theme.warningMuted }]}>
+              <View
+                style={[styles.starBox, { backgroundColor: theme.warningMuted }]}
+              >
                 <AppIcon name="star" size={18} color={theme.warning} />
               </View>
               <View style={{ flex: 1, gap: 2 }}>
-                <ThemedText variant="cardTitle">Gentle Companion Note</ThemedText>
+                <ThemedText variant="cardTitle">
+                  Gentle Companion Note
+                </ThemedText>
                 <ThemedText variant="caption" color="secondary">
                   {summary.insightMessage}
                 </ThemedText>
@@ -244,7 +380,7 @@ export const InsightsScreen: React.FC = () => {
 
           {/* Milestones & Achievements */}
           <GlassCard padding={16} style={styles.cardGap}>
-            <ThemedText variant="h2">Milestones</ThemedText>
+            <ThemedText variant="h2">Personalized Milestones</ThemedText>
             <View style={styles.badgesWrap}>
               {summary.achievements.map((badge) => (
                 <View
@@ -252,7 +388,9 @@ export const InsightsScreen: React.FC = () => {
                   style={[
                     styles.badgeCard,
                     {
-                      backgroundColor: badge.earned ? theme.primaryMuted : theme.element,
+                      backgroundColor: badge.earned
+                        ? theme.primaryMuted
+                        : theme.element,
                       borderColor: badge.earned ? theme.primary : theme.border,
                       opacity: badge.earned ? 1 : 0.6,
                     },
@@ -274,16 +412,70 @@ export const InsightsScreen: React.FC = () => {
             </View>
           </GlassCard>
 
+          {/* Weekly Reflection (Retention without guilt) */}
+          <GlassCard padding={16} style={styles.cardGap}>
+            <ThemedText variant="h2">Weekly Reflection</ThemedText>
+            <ThemedText variant="caption" color="secondary">
+              Pause once a week to notice what worked and tune next week gently.
+            </ThemedText>
+            <SegmentedControl<ReflectionMood>
+              value={mood}
+              onChange={setMood}
+              options={[
+                { value: "calm", label: "Calm" },
+                { value: "balanced", label: "Balanced" },
+                { value: "stretched", label: "Stretched" },
+              ]}
+            />
+            <TextInput
+              value={highlight}
+              onChangeText={setHighlight}
+              placeholder="One win you're grateful for this week..."
+              placeholderTextColor={theme.textMuted}
+              style={[
+                styles.input,
+                {
+                  color: theme.text,
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            />
+            <TextInput
+              value={adjustment}
+              onChangeText={setAdjustment}
+              placeholder="One realistic adjustment for next week..."
+              placeholderTextColor={theme.textMuted}
+              style={[
+                styles.input,
+                {
+                  color: theme.text,
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            />
+            <Button
+              title="Save Weekly Reflection"
+              variant="gradient"
+              loading={saveReflectionMutation.isPending}
+              onPress={handleSaveReflection}
+            />
+          </GlassCard>
+
           {/* Optional Gentle Challenges */}
           {challenges.length > 0 ? (
             <GlassCard padding={16} style={styles.cardGap}>
-              <ThemedText variant="h2">Optional Challenges</ThemedText>
+              <ThemedText variant="h2">Optional Weekly Challenges</ThemedText>
               {challenges.map((ch) => (
                 <View
                   key={ch.id}
                   style={[
                     styles.challengeItem,
-                    { borderColor: theme.border, backgroundColor: theme.element },
+                    {
+                      borderColor: theme.border,
+                      backgroundColor: theme.element,
+                    },
                   ]}
                 >
                   <View style={{ flex: 1, gap: 3 }}>
@@ -291,8 +483,13 @@ export const InsightsScreen: React.FC = () => {
                     <ThemedText variant="caption" color="secondary">
                       {ch.description}
                     </ThemedText>
-                    <ThemedText variant="micro" color="primary" weight="semiBold">
-                      {ch.progressDays} / {ch.targetDays} days {ch.completed ? "• Completed" : ""}
+                    <ThemedText
+                      variant="micro"
+                      color="primary"
+                      weight="semiBold"
+                    >
+                      {ch.progressDays} / {ch.targetDays} days{" "}
+                      {ch.completed ? "• Completed" : ""}
                     </ThemedText>
                   </View>
                   <View style={styles.challengeBtns}>
@@ -303,7 +500,8 @@ export const InsightsScreen: React.FC = () => {
                         variant="primary"
                         onPress={() =>
                           logChallengeMutation.mutate(ch.id, {
-                            onSuccess: () => toast.success("Challenge day logged!"),
+                            onSuccess: () =>
+                              toast.success("Challenge day logged!"),
                           })
                         }
                       />
@@ -329,6 +527,7 @@ const styles = StyleSheet.create({
   headerRow: {
     alignItems: "center",
     justifyContent: "space-between",
+    flexDirection: "row",
   },
   calendarBadge: {
     width: 40,
@@ -347,6 +546,18 @@ const styles = StyleSheet.create({
   },
   miniMetrics: {
     marginTop: -6,
+  },
+  indicatorRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  indBox: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    gap: 2,
   },
   trendRow: {
     flexDirection: "row",
@@ -396,6 +607,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 10,
     gap: 4,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
   },
   challengeItem: {
     borderRadius: 14,

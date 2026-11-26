@@ -2,6 +2,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { getSupabaseClient } from "@/core/supabase/client";
 import { queryClient } from "@/lib/queryClient";
 import { createLogger } from "@/shared/logger";
+import { errorMonitor } from "@/shared/monitoring/errorMonitor";
 import { syncQueueDb } from "./syncQueue";
 
 const syncLogger = createLogger("Sync");
@@ -197,6 +198,7 @@ async function executeSync(force: boolean): Promise<SyncRunResult> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown sync error";
     syncLogger.warn("Cloud sync error", { msg });
+    void errorMonitor.recordApiFailure("sync-engine", 500, msg);
     lastSyncCompletedAt = Date.now();
     await syncQueueDb.updateMetadata({
       lastSyncStatus: "error",

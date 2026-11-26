@@ -393,6 +393,130 @@ const MIGRATIONS: Migration[] = [
       );
     },
   },
+  {
+    version: 4,
+    name: "phase6_prayer_and_alarms",
+    up: async (db) => {
+      const now = new Date().toISOString();
+      const tz =
+        typeof Intl !== "undefined"
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Cairo"
+          : "Africa/Cairo";
+
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS prayer_settings (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          location_mode TEXT NOT NULL DEFAULT 'manual',
+          city_name TEXT NOT NULL DEFAULT 'Cairo, Egypt',
+          latitude REAL NOT NULL DEFAULT 30.0444,
+          longitude REAL NOT NULL DEFAULT 31.2357,
+          timezone TEXT NOT NULL DEFAULT 'Africa/Cairo',
+          calculation_method TEXT NOT NULL DEFAULT 'Egyptian',
+          asr_school TEXT NOT NULL DEFAULT 'shafi',
+          notifications_enabled INTEGER NOT NULL DEFAULT 1,
+          advance_minutes INTEGER NOT NULL DEFAULT 10,
+          focus_duration_minutes INTEGER NOT NULL DEFAULT 10,
+          audio_focus_enabled INTEGER NOT NULL DEFAULT 1,
+          per_prayer_enabled_json TEXT NOT NULL DEFAULT '{"fajr":true,"dhuhr":true,"asr":true,"maghrib":true,"isha":true}',
+          updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS prayer_logs (
+          id TEXT PRIMARY KEY,
+          prayer_date TEXT NOT NULL,
+          prayer_name TEXT NOT NULL CHECK (prayer_name IN ('fajr','dhuhr','asr','maghrib','isha')),
+          status TEXT NOT NULL DEFAULT 'not_recorded' CHECK (status IN ('on_time','delayed','qada','missed','not_recorded')),
+          auto_muted_triggered INTEGER NOT NULL DEFAULT 0,
+          logged_at TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'pending',
+          UNIQUE(prayer_date, prayer_name)
+        );
+
+        CREATE TABLE IF NOT EXISTS alarms (
+          id TEXT PRIMARY KEY,
+          label TEXT NOT NULL,
+          hour INTEGER NOT NULL,
+          minute INTEGER NOT NULL,
+          days_json TEXT NOT NULL DEFAULT '[0,1,2,3,4,5,6]',
+          sound_key TEXT NOT NULL DEFAULT 'gentle_dawn',
+          snooze_minutes INTEGER NOT NULL DEFAULT 5,
+          is_enabled INTEGER NOT NULL DEFAULT 1,
+          vibrate INTEGER NOT NULL DEFAULT 1,
+          next_fire_at TEXT,
+          snoozed_until TEXT,
+          platform_mode TEXT NOT NULL DEFAULT 'scheduled_notification',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          deleted_at TEXT,
+          sync_status TEXT NOT NULL DEFAULT 'pending'
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_prayer_logs_date ON prayer_logs(prayer_date DESC);
+        CREATE INDEX IF NOT EXISTS idx_alarms_enabled ON alarms(is_enabled, hour, minute);
+      `);
+
+      await db.runAsync(
+        `INSERT OR IGNORE INTO prayer_settings (id, timezone, updated_at) VALUES (1, ?, ?)`,
+        [tz, now],
+      );
+
+      // Seed one gentle disabled wake-up alarm preset so users see how alarms work immediately
+      const existingAlarms = await db.getFirstAsync<{ count: number }>(
+        "SELECT COUNT(*) as count FROM alarms",
+      );
+      if ((existingAlarms?.count ?? 0) === 0) {
+        await db.runAsync(
+          `INSERT INTO alarms (id, label, hour, minute, days_json, sound_key, snooze_minutes, is_enabled, vibrate, created_at, updated_at, sync_status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'synced')`,
+          [
+            "alarm_dawn_seed",
+            "Fajr & Dawn Wake-Up",
+            5,
+            0,
+            "[0,1,2,3,4,5,6]",
+            "gentle_dawn",
+            5,
+            0,
+            1,
+            now,
+            now,
+          ],
+        );
+      }
+    },
+  },
+  {
+    version: 5,
+    name: "phase7_performance_indexes_and_reflections",
+    up: async (db) => {
+      await db.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_task_logs_date_task
+          ON task_logs(log_date DESC, task_id);
+
+        CREATE INDEX IF NOT EXISTS idx_habit_logs_date_habit
+          ON habit_logs(log_date DESC, habit_id);
+
+        CREATE INDEX IF NOT EXISTS idx_routine_logs_date_routine
+          ON routine_logs(log_date DESC, routine_id);
+
+        CREATE INDEX IF NOT EXISTS idx_prayer_logs_status_date
+          ON prayer_logs(prayer_date DESC, status);
+
+        CREATE TABLE IF NOT EXISTS weekly_reflections (
+          id TEXT PRIMARY KEY,
+          week_start_iso TEXT NOT NULL UNIQUE,
+          energy_mood TEXT NOT NULL CHECK (energy_mood IN ('calm', 'balanced', 'stretched')),
+          highlight TEXT NOT NULL DEFAULT '',
+          adjustment TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {

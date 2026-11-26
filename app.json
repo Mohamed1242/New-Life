@@ -6,6 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/icon.png",
     "platforms": [
       "ios",
       "android",
@@ -13,17 +14,43 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.newlife.assistant"
+      "bundleIdentifier": "com.newlife.assistant",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "New Life uses your city or coordinates locally to calculate accurate offline prayer times and Qibla direction.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
     },
     "android": {
       "package": "com.newlife.assistant",
-      "predictiveBackGestureEnabled": false
+      "versionCode": 1,
+      "predictiveBackGestureEnabled": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#6C5CE7"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "SCHEDULE_EXACT_ALARM",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
           "backgroundColor": "#F4F3FB",
           "dark": {
             "backgroundColor": "#0B0D18"
@@ -34,8 +61,19 @@
       "expo-localization",
       "expo-status-bar",
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-audio",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow New Life to detect your city and coordinates for accurate offline prayer times."
+        }
+      ]
     ],
+    "extra": {
+      "privacyPolicySummary": "All lifestyle logs stay local-first in encrypted device storage; optional cloud sync uses strict row-level isolation and never shares unapproved personal data.",
+      "router": {}
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

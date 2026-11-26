@@ -1,3 +1,5 @@
+import { errorMonitor } from "@/shared/monitoring/errorMonitor";
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 const PRIORITY: Record<LogLevel, number> = {
@@ -16,6 +18,9 @@ export interface DomainLogger {
 
 export function createLogger(domain: string, minLevel: LogLevel = __DEV__ ? "debug" : "warn"): DomainLogger {
   const emit = (level: LogLevel, msg: string, ctx?: Record<string, unknown>) => {
+    if (level === "error") {
+      void errorMonitor.recordError(domain, msg, ctx);
+    }
     if (PRIORITY[level] < PRIORITY[minLevel]) return;
     const prefix = `[${domain}]`;
     if (level === "error") console.error(prefix, msg, ctx ?? "");

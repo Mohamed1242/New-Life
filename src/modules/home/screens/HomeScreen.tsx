@@ -13,6 +13,8 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { TaskRowCard } from "@/components/ui/TaskRowCard";
 import { WeeklyDateStrip } from "@/components/ui/WeeklyDateStrip";
 import { useTranslation } from "@/i18n";
+import { useDailyPrayerSchedule } from "@/modules/prayer/hooks/usePrayer";
+import { formatMinutesCountdown } from "@/modules/prayer/services/prayerCalculator";
 import { useToggleHabitMutation } from "@/modules/tasks/hooks/useTasksAndHabits";
 import { useResponsive } from "@/theme/responsive";
 import { useTheme } from "@/theme/tokens";
@@ -24,6 +26,7 @@ export const HomeScreen: React.FC = () => {
   const { isRTL, t } = useTranslation();
   const { isTablet } = useResponsive();
   const toggleHabitMutation = useToggleHabitMutation();
+  const prayerSchedule = useDailyPrayerSchedule();
 
   const {
     userName,
@@ -157,7 +160,7 @@ export const HomeScreen: React.FC = () => {
 
             <GlassCard
               padding={14}
-              onPress={() => router.push("/(modals)/prayer-focus")}
+              onPress={() => router.push("/(modals)/prayers")}
             >
               <View
                 style={[
@@ -179,11 +182,23 @@ export const HomeScreen: React.FC = () => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <ThemedText variant="caption" color="secondary">
-                    {t("home.nextPrayer", "Next Prayer")} · Asr at 03:42 PM
+                    {t("home.nextPrayer", "Next Prayer")} ·{" "}
+                    {prayerSchedule.nextPrayer.label} at{" "}
+                    {prayerSchedule.nextPrayer.formattedTime}
                   </ThemedText>
-                  <ThemedText variant="cardTitle">Prayer Focus Ready</ThemedText>
+                  <ThemedText variant="cardTitle">
+                    {formatMinutesCountdown(
+                      prayerSchedule.nextPrayer.minutesUntil,
+                    )}{" "}
+                    · {prayerSchedule.cityName}
+                  </ThemedText>
                 </View>
-                <View
+                <Pressable
+                  onPress={() =>
+                    router.push(
+                      `/(modals)/prayer-focus?prayer=${prayerSchedule.nextPrayer.prayer}`,
+                    )
+                  }
                   style={[
                     styles.focusPill,
                     { backgroundColor: theme.pillarSpiritualityMuted },
@@ -196,7 +211,7 @@ export const HomeScreen: React.FC = () => {
                   >
                     {t("home.prayerFocusAction", "Focus Mode")}
                   </ThemedText>
-                </View>
+                </Pressable>
               </View>
             </GlassCard>
 

@@ -118,6 +118,60 @@ export const ProfileScreen: React.FC = () => {
       </GlassCard>
 
       <GlassCard padding={6}>
+        {[
+          {
+            key: "prayers",
+            route: "/(modals)/prayers",
+            icon: "compass",
+            title: "Prayer Times & Tracker",
+            subtitle: "Daily schedule, Egyptian Survey method & Qibla",
+            accent: theme.pillarSpirituality,
+          },
+          {
+            key: "alarms",
+            route: "/(modals)/alarms",
+            icon: "clock",
+            title: "Wake-Up Alarms",
+            subtitle: "Recurring alarms, sounds, snooze & exact permissions",
+            accent: theme.warning,
+          },
+        ].map((item, idx) => (
+          <Pressable
+            key={item.key}
+            onPress={() => router.push(item.route as any)}
+            style={[
+              styles.settingRow,
+              {
+                flexDirection: isRTL ? "row-reverse" : "row",
+                borderBottomWidth: idx === 0 ? StyleSheet.hairlineWidth : 0,
+                borderBottomColor: theme.border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.iconBadge,
+                { backgroundColor: `${item.accent}1E` },
+              ]}
+            >
+              <AppIcon name={item.icon} size={18} color={item.accent} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <ThemedText variant="cardTitle">{item.title}</ThemedText>
+              <ThemedText variant="caption" color="secondary" numberOfLines={1}>
+                {item.subtitle}
+              </ThemedText>
+            </View>
+            <AppIcon
+              name={isRTL ? "chevron-left" : "chevron-right"}
+              size={18}
+              color={theme.textMuted}
+            />
+          </Pressable>
+        ))}
+      </GlassCard>
+
+      <GlassCard padding={6}>
         {rows.map((item, idx) => (
           <Pressable
             key={item.key}

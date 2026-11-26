@@ -1,0 +1,6 @@
+{
+  "name": "wake-alarm",
+  "version": "1.0.0",
+  "description": "Local Expo module for Android AlarmManager exact wake-up alarms with boot persistence.",
+  "main": "index.ts"
+}

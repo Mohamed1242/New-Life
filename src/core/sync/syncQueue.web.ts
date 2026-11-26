@@ -8,6 +8,8 @@ const META_KEY = "newlife_web_sync_meta_v1";
 const TASKS_KEY = "newlife_web_tasks_v3";
 const HABITS_KEY = "newlife_web_habits_v3";
 const ROUTINES_KEY = "newlife_web_routines_v2";
+const PRAYER_LOGS_KEY = "newlife_web_prayer_logs_v1";
+const ALARMS_KEY = "newlife_web_alarms_v1";
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -183,6 +185,87 @@ export const syncQueueDb = {
         });
       }
       writeJson(ROUTINES_KEY, Array.from(map.values()));
+    }
+
+    const cloudPrayers = changes.prayer_logs ?? [];
+    if (cloudPrayers.length > 0) {
+      const local = readJson<
+        {
+          id: string;
+          prayerDate: string;
+          prayerName: string;
+          status: string;
+          autoMutedTriggered: boolean;
+          loggedAt: string;
+        }[]
+      >(PRAYER_LOGS_KEY, []);
+      const map = new Map(local.map((p) => [`${p.prayerDate}_${p.prayerName}`, p]));
+      for (const cp of cloudPrayers) {
+        const key = `${String(cp.prayer_date)}_${String(cp.prayer_name)}`;
+        if (cp.deleted_at) {
+          map.delete(key);
+          continue;
+        }
+        map.set(key, {
+          id: String(cp.id),
+          prayerDate: String(cp.prayer_date),
+          prayerName: String(cp.prayer_name),
+          status: String(cp.status ?? "not_recorded"),
+          autoMutedTriggered: Boolean(cp.auto_muted_triggered),
+          loggedAt: String(cp.logged_at ?? new Date().toISOString()),
+        });
+      }
+      writeJson(PRAYER_LOGS_KEY, Array.from(map.values()));
+    }
+
+    const cloudReminders = changes.reminders ?? [];
+    if (cloudReminders.length > 0) {
+      const local = readJson<
+        {
+          id: string;
+          label: string;
+          hour: number;
+          minute: number;
+          days: number[];
+          soundKey: string;
+          snoozeMinutes: number;
+          isEnabled: boolean;
+          vibrate: boolean;
+          platformMode: string;
+        }[]
+      >(ALARMS_KEY, []);
+      const map = new Map(local.map((a) => [a.id, a]));
+      for (const rem of cloudReminders) {
+        if (rem.entity_type !== "custom_alarm") continue;
+        const id = String(rem.id);
+        if (rem.deleted_at) {
+          map.delete(id);
+          continue;
+        }
+        const [hStr, mStr] = String(rem.trigger_time ?? "06:00").split(":");
+        let days = [0, 1, 2, 3, 4, 5, 6];
+        try {
+          if (typeof rem.repeat_rule === "string" && rem.repeat_rule.startsWith("[")) {
+            days = JSON.parse(rem.repeat_rule) as number[];
+          }
+        } catch {
+          days = [0, 1, 2, 3, 4, 5, 6];
+        }
+        const prev = map.get(id);
+        map.set(id, {
+          id,
+          label: String(rem.title ?? "Wake-Up Alarm"),
+          hour: Math.min(23, Math.max(0, Number(hStr ?? 6))),
+          minute: Math.min(59, Math.max(0, Number(mStr ?? 0))),
+          days,
+          soundKey: String(rem.sound_key ?? "gentle_dawn"),
+          snoozeMinutes: prev?.snoozeMinutes ?? 5,
+          isEnabled: Boolean(rem.is_enabled ?? true),
+          vibrate: prev?.vibrate ?? true,
+          platformMode: prev?.platformMode ?? "scheduled_notification",
+        });
+      }
+      writeJson(ALARMS_KEY, Array.from(map.values()));
     }
   },
 };
