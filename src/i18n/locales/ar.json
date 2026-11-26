@@ -1,0 +1,100 @@
+{
+  "common": {
+    "back": "رجوع",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "save": "حفظ",
+    "done": "تم",
+    "undo": "تراجع",
+    "retry": "إعادة المحاولة",
+    "seeAll": "عرض الكل",
+    "today": "اليوم",
+    "skip": "تخطي"
+  },
+  "tabs": {
+    "home": "الرئيسية",
+    "tasks": "المهام",
+    "insights": "التحليلات",
+    "assistant": "المساعد",
+    "profile": "الإعدادات"
+  },
+  "categories": {
+    "prayer": "الصلاة",
+    "gym": "الرياضة",
+    "health": "الصحة",
+    "work": "العمل",
+    "study": "الدراسة",
+    "custom": "مخصص"
+  },
+  "home": {
+    "greetingMorning": "صباح الخير، {{name}}",
+    "greetingAfternoon": "مساء الخير، {{name}}",
+    "greetingEvening": "مساء النور، {{name}}",
+    "subtitle": "خطوات صغيرة تصنع فرقاً كبيراً.",
+    "todaysProgress": "إنجاز اليوم",
+    "tasksCount": "{{done}} من {{total}} مهام",
+    "nextPrayer": "الصلاة القادمة",
+    "prayerFocusAction": "وضع الخشوع",
+    "todaysSchedule": "مهام اليوم",
+    "dailyHabits": "عادات اليوم",
+    "aiDailyInsight": "ملاحظة المساعد اليومية"
+  },
+  "tasks": {
+    "title": "المهام والعادات",
+    "segmentTasks": "المهام",
+    "segmentHabits": "العادات",
+    "addNewTask": "إضافة مهمة جديدة",
+    "taskTitle": "عنوان المهمة",
+    "taskPlaceholder": "مثال: قراءة 10 صفحات",
+    "reminder": "تذكير",
+    "reminderSub": "تنبيه لطيف في الموعد",
+    "repeat": "التكرار",
+    "priority": "الأولوية",
+    "addTaskCta": "إضافة المهمة",
+    "emptyTitle": "يومك هادئ ومفتوح",
+    "emptySubtitle": "أضف أولوية واحدة مهمة أو اطلب من المساعد تنظيم يومك."
+  },
+  "habits": {
+    "positiveTitle": "العادات الإيجابية",
+    "negativeTitle": "عادات نعمل على تقليلها",
+    "addNewHabit": "عادة جديدة",
+    "logUrge": "تسجيل رغبة",
+    "stayedStrong": "تجاوزتها اليوم",
+    "streakDays": "{{count}} يوم استمرار"
+  },
+  "insights": {
+    "title": "التحليلات",
+    "week": "هذا الأسبوع",
+    "month": "هذا الشهر",
+    "year": "هذه السنة",
+    "overallProgress": "التقدم العام",
+    "habitsOverview": "نظرة على العادات",
+    "lifeBalance": "توازن الحياة",
+    "spirituality": "الروحانيات",
+    "health": "الصحة",
+    "productivity": "الإنتاجية"
+  },
+  "assistant": {
+    "title": "مساعدك الذكي",
+    "subtitle": "هنا دائماً لدعم نموك",
+    "placeholder": "اسألني عن أي شيء...",
+    "remindMe": "ذكّرني",
+    "turnDownMedia": "خفض الصوت"
+  },
+  "profile": {
+    "title": "الإعدادات",
+    "goals": "الأهداف الشخصية",
+    "notifications": "الإشعارات والمنبهات",
+    "prayer": "إعدادات الصلاة",
+    "sleep": "جدول النوم",
+    "appearance": "المظهر واللغة",
+    "privacy": "الخصوصية والبيانات"
+  },
+  "prayerFocus": {
+    "title": "وقت الصلاة",
+    "subtitle": "سيتم كتم الصوت أثناء وقت الصلاة",
+    "blessing": "تقبل الله صلاتك",
+    "markPrayed": "تمت الصلاة",
+    "endEarly": "إنهاء التركيز"
+  }
+}

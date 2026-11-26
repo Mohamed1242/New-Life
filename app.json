@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "New Life",
+    "slug": "new-life",
+    "scheme": "newlife",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.newlife.assistant"
+    },
+    "android": {
+      "package": "com.newlife.assistant",
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F4F3FB",
+          "dark": {
+            "backgroundColor": "#0B0D18"
+          }
+        }
+      ],
+      "expo-font",
+      "expo-localization",
+      "expo-status-bar",
+      "expo-sqlite"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

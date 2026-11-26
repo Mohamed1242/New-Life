@@ -1,0 +1,100 @@
+{
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "done": "Done",
+    "undo": "Undo",
+    "retry": "Retry",
+    "seeAll": "See all",
+    "today": "Today",
+    "skip": "Skip"
+  },
+  "tabs": {
+    "home": "Home",
+    "tasks": "Tasks",
+    "insights": "Insights",
+    "assistant": "Assistant",
+    "profile": "Profile"
+  },
+  "categories": {
+    "prayer": "Prayer",
+    "gym": "Gym",
+    "health": "Health",
+    "work": "Work",
+    "study": "Study",
+    "custom": "Custom"
+  },
+  "home": {
+    "greetingMorning": "Good Morning, {{name}}",
+    "greetingAfternoon": "Good Afternoon, {{name}}",
+    "greetingEvening": "Good Evening, {{name}}",
+    "subtitle": "Small steps. Big changes.",
+    "todaysProgress": "Today's Progress",
+    "tasksCount": "{{done}} of {{total}} tasks",
+    "nextPrayer": "Next Prayer",
+    "prayerFocusAction": "Focus Mode",
+    "todaysSchedule": "Today's Tasks",
+    "dailyHabits": "Daily Habits",
+    "aiDailyInsight": "Daily Companion Note"
+  },
+  "tasks": {
+    "title": "Tasks & Habits",
+    "segmentTasks": "Tasks",
+    "segmentHabits": "Habits",
+    "addNewTask": "Add New Task",
+    "taskTitle": "Task Title",
+    "taskPlaceholder": "e.g. Read 10 pages",
+    "reminder": "Reminder",
+    "reminderSub": "Get gentle notification",
+    "repeat": "Repeat",
+    "priority": "Priority",
+    "addTaskCta": "Add Task",
+    "emptyTitle": "Your day is open",
+    "emptySubtitle": "Add one meaningful priority or let your assistant help plan."
+  },
+  "habits": {
+    "positiveTitle": "Positive Habits",
+    "negativeTitle": "Habits to Reduce",
+    "addNewHabit": "New Habit",
+    "logUrge": "Log Urge",
+    "stayedStrong": "Stayed clear today",
+    "streakDays": "{{count}}d momentum"
+  },
+  "insights": {
+    "title": "Insights",
+    "week": "This Week",
+    "month": "This Month",
+    "year": "This Year",
+    "overallProgress": "Overall Progress",
+    "habitsOverview": "Habits Overview",
+    "lifeBalance": "Life Balance",
+    "spirituality": "Spirituality",
+    "health": "Health",
+    "productivity": "Productivity"
+  },
+  "assistant": {
+    "title": "Your AI Assistant",
+    "subtitle": "Always here to help you grow",
+    "placeholder": "Ask me anything...",
+    "remindMe": "Remind Me",
+    "turnDownMedia": "Turn Down Media"
+  },
+  "profile": {
+    "title": "Settings",
+    "goals": "User Goals",
+    "notifications": "Notifications & Alarms",
+    "prayer": "Prayer Settings",
+    "sleep": "Sleep Schedule",
+    "appearance": "Appearance & Language",
+    "privacy": "Privacy & Data"
+  },
+  "prayerFocus": {
+    "title": "Prayer Time",
+    "subtitle": "Audio will be muted during prayer time",
+    "blessing": "Have a blessed prayer",
+    "markPrayed": "Mark Prayed",
+    "endEarly": "End Focus"
+  }
+}
