@@ -9,13 +9,43 @@ export function toIsoDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+export function parseIsoDate(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
+export function addDaysIso(iso: string, deltaDays: number): string {
+  const dt = parseIsoDate(iso);
+  dt.setDate(dt.getDate() + deltaDays);
+  return toIsoDate(dt);
+}
+
 export function getTodayIso(): string {
   return toIsoDate(new Date());
 }
 
+export function getWeekdayIndex(iso: string): number {
+  return parseIsoDate(iso).getDay(); // 0 = Sun ... 6 = Sat
+}
+
+export function getRecentDateRange(endIso: string, days: number): string[] {
+  const list: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    list.push(addDaysIso(endIso, -i));
+  }
+  return list;
+}
+
+export function generateUuid(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export function buildWeekStrip(centerDateIso: string, activeDates: Set<string>): DayPillItem[] {
-  const [y, m, d] = centerDateIso.split("-").map(Number);
-  const center = new Date(y, (m || 1) - 1, d || 1);
+  const center = parseIsoDate(centerDateIso);
   const items: DayPillItem[] = [];
 
   for (let offset = -2; offset <= 2; offset++) {

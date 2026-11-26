@@ -6,6 +6,7 @@ import { AppIcon } from "@/components/icons/AppIcon";
 import { ThemedText } from "@/components/themed/ThemedText";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useTranslation } from "@/i18n";
+import { useAuthStore } from "@/modules/auth/store/useAuthStore";
 import { useCompanionStore } from "@/store/useCompanionStore";
 import { useTheme } from "@/theme/tokens";
 
@@ -23,6 +24,11 @@ export const ProfileScreen: React.FC = () => {
   const { t, isRTL } = useTranslation();
   const userName = useCompanionStore((s) => s.userName);
   const sleepSchedule = useCompanionStore((s) => s.sleepSchedule);
+  const authUser = useAuthStore((s) => s.user);
+  const displayTitle =
+    (typeof authUser?.user_metadata?.display_name === "string" &&
+      authUser.user_metadata.display_name.trim()) ||
+    userName;
 
   const rows: SettingRowItem[] = [
     {
@@ -79,7 +85,11 @@ export const ProfileScreen: React.FC = () => {
     <ScreenWrapper>
       <ThemedText variant="h1">{t("profile.title", "Settings")}</ThemedText>
 
-      <GlassCard elevated padding={16}>
+      <GlassCard
+        elevated
+        padding={16}
+        onPress={() => router.push("/(modals)/cloud-account")}
+      >
         <View
           style={[
             styles.profileRow,
@@ -88,13 +98,15 @@ export const ProfileScreen: React.FC = () => {
         >
           <View style={[styles.avatar, { backgroundColor: theme.primaryMuted }]}>
             <ThemedText variant="h2" color="primary">
-              {userName.charAt(0).toUpperCase()}
+              {displayTitle.charAt(0).toUpperCase()}
             </ThemedText>
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <ThemedText variant="cardTitle">{userName}</ThemedText>
+            <ThemedText variant="cardTitle">{displayTitle}</ThemedText>
             <ThemedText variant="caption" color="secondary">
-              Personal Growth Companion · SQLite Local-first
+              {authUser?.email
+                ? `${authUser.email} · Cloud Sync Active`
+                : "Cloud Backup & Sync · Tap to sign in"}
             </ThemedText>
           </View>
           <AppIcon

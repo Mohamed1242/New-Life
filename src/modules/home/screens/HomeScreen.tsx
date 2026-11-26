@@ -8,10 +8,12 @@ import { StatePlaceholder } from "@/components/common/StatePlaceholder";
 import { AppIcon } from "@/components/icons/AppIcon";
 import { ThemedText } from "@/components/themed/ThemedText";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { HabitCard } from "@/components/ui/HabitCard";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { TaskRowCard } from "@/components/ui/TaskRowCard";
 import { WeeklyDateStrip } from "@/components/ui/WeeklyDateStrip";
 import { useTranslation } from "@/i18n";
+import { useToggleHabitMutation } from "@/modules/tasks/hooks/useTasksAndHabits";
 import { useResponsive } from "@/theme/responsive";
 import { useTheme } from "@/theme/tokens";
 import { useHomeDashboard } from "../hooks/useHomeDashboard";
@@ -21,6 +23,7 @@ export const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { isRTL, t } = useTranslation();
   const { isTablet } = useResponsive();
+  const toggleHabitMutation = useToggleHabitMutation();
 
   const {
     userName,
@@ -28,15 +31,22 @@ export const HomeScreen: React.FC = () => {
     setSelectedDate,
     weekDays,
     tasks,
+    habits,
+    routines,
     completedCount,
+    skippedOrPostponedCount,
     totalCount,
     progressRatio,
     progressPct,
+    isCelebrationReached,
     isLoading,
     isError,
     refetch,
     handleToggleTask,
   } = useHomeDashboard();
+
+  const nextRoutine =
+    routines.find((r) => r.todayStatus === "not_recorded") ?? routines[0];
 
   return (
     <View style={styles.root}>
@@ -88,6 +98,27 @@ export const HomeScreen: React.FC = () => {
           </ThemedText>
         </View>
 
+        {isCelebrationReached ? (
+          <GlassCard padding={14}>
+            <View
+              style={[
+                styles.celebrationRow,
+                { flexDirection: isRTL ? "row-reverse" : "row" },
+              ]}
+            >
+              <View style={[styles.prayerIcon, { backgroundColor: theme.successMuted }]}>
+                <AppIcon name="award" size={18} color={theme.success} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <ThemedText variant="cardTitle">Meaningful progress today</ThemedText>
+                <ThemedText variant="caption" color="secondary">
+                  You completed {progressPct}% of your scheduled tasks. Pace yourself calmly.
+                </ThemedText>
+              </View>
+            </View>
+          </GlassCard>
+        ) : null}
+
         <View style={isTablet ? styles.tabletGrid : styles.stackCol}>
           <View style={isTablet ? styles.tabletCol : styles.stackCol}>
             <GlassCard elevated padding={18}>
@@ -104,6 +135,9 @@ export const HomeScreen: React.FC = () => {
                   <ThemedText variant="display">{progressPct}%</ThemedText>
                   <ThemedText variant="caption" color="muted">
                     {t("home.tasksCount", { done: completedCount, total: totalCount })}
+                    {skippedOrPostponedCount > 0
+                      ? ` · ${skippedOrPostponedCount} paused/moved`
+                      : ""}
                   </ThemedText>
                 </View>
                 <ProgressRing
@@ -147,7 +181,7 @@ export const HomeScreen: React.FC = () => {
                   <ThemedText variant="caption" color="secondary">
                     {t("home.nextPrayer", "Next Prayer")} · Asr at 03:42 PM
                   </ThemedText>
-                  <ThemedText variant="cardTitle">In 24 minutes</ThemedText>
+                  <ThemedText variant="cardTitle">Prayer Focus Ready</ThemedText>
                 </View>
                 <View
                   style={[
@@ -166,34 +200,39 @@ export const HomeScreen: React.FC = () => {
               </View>
             </GlassCard>
 
-            <GlassCard
-              padding={14}
-              onPress={() => router.push("/(tabs)/assistant")}
-            >
-              <View
-                style={[
-                  styles.aiRow,
-                  { flexDirection: isRTL ? "row-reverse" : "row" },
-                ]}
+            {nextRoutine ? (
+              <GlassCard
+                padding={14}
+                onPress={() => router.push("/(tabs)/tasks")}
               >
                 <View
                   style={[
-                    styles.prayerIcon,
-                    { backgroundColor: theme.primaryMuted },
+                    styles.prayerRow,
+                    { flexDirection: isRTL ? "row-reverse" : "row" },
                   ]}
                 >
-                  <AppIcon name="sparkles" size={18} color={theme.primary} />
+                  <View
+                    style={[
+                      styles.prayerIcon,
+                      { backgroundColor: theme.primaryMuted },
+                    ]}
+                  >
+                    <AppIcon name="clock" size={18} color={theme.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <ThemedText variant="caption" color="secondary">
+                      Daily Routine · {nextRoutine.startTime} – {nextRoutine.endTime}
+                    </ThemedText>
+                    <ThemedText variant="cardTitle">{nextRoutine.title}</ThemedText>
+                  </View>
+                  <AppIcon
+                    name={isRTL ? "chevron-left" : "chevron-right"}
+                    size={16}
+                    color={theme.textMuted}
+                  />
                 </View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <ThemedText variant="caption" color="primary" weight="semiBold">
-                    {t("home.aiDailyInsight", "Daily Companion Note")}
-                  </ThemedText>
-                  <ThemedText variant="body" color="secondary">
-                    You are 12% more consistent this week. Protecting your 6 PM gym block keeps your balance high.
-                  </ThemedText>
-                </View>
-              </View>
-            </GlassCard>
+              </GlassCard>
+            ) : null}
           </View>
 
           <View style={isTablet ? styles.tabletCol : styles.stackCol}>
@@ -242,10 +281,48 @@ export const HomeScreen: React.FC = () => {
                     key={task.id}
                     task={task}
                     onToggle={handleToggleTask}
+                    onPress={(item) =>
+                      router.push(`/(modals)/task-editor?id=${item.id}`)
+                    }
                   />
                 ))}
               </View>
             )}
+
+            {habits.length > 0 ? (
+              <>
+                <View
+                  style={[
+                    styles.sectionHeader,
+                    { flexDirection: isRTL ? "row-reverse" : "row" },
+                  ]}
+                >
+                  <ThemedText variant="h2">
+                    {t("home.dailyHabits", "Daily Habits")}
+                  </ThemedText>
+                  <Pressable onPress={() => router.push("/(tabs)/tasks")}>
+                    <ThemedText variant="caption" color="primary" weight="semiBold">
+                      {t("common.seeAll", "See all")} →
+                    </ThemedText>
+                  </Pressable>
+                </View>
+                <View style={styles.taskList}>
+                  {habits.slice(0, 2).map((habit) => (
+                    <HabitCard
+                      key={habit.id}
+                      habit={habit}
+                      onToggle={(id) => toggleHabitMutation.mutate(id)}
+                      onPress={(h) =>
+                        router.push({
+                          pathname: "/(modals)/habit-detail/[id]",
+                          params: { id: h.id },
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+              </>
+            ) : null}
           </View>
         </View>
       </ScreenWrapper>
@@ -295,6 +372,10 @@ const styles = StyleSheet.create({
   greetingBlock: {
     gap: 2,
   },
+  celebrationRow: {
+    alignItems: "center",
+    gap: 12,
+  },
   stackCol: {
     gap: 14,
   },
@@ -316,10 +397,6 @@ const styles = StyleSheet.create({
   },
   prayerRow: {
     alignItems: "center",
-    gap: 12,
-  },
-  aiRow: {
-    alignItems: "flex-start",
     gap: 12,
   },
   prayerIcon: {

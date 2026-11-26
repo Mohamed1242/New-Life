@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet, Switch, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScreenWrapper } from "@/components/common/ScreenWrapper";
@@ -7,11 +7,15 @@ import { ThemedText } from "@/components/themed/ThemedText";
 import { Button } from "@/components/ui/Button";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { getSupabaseClient } from "@/core/supabase/client";
 import { useTranslation } from "@/i18n";
+import { useAuthStore } from "@/modules/auth/store/useAuthStore";
+import { notificationService } from "@/modules/notifications/services/notificationService";
 import { dialog } from "@/shared/dialog/DialogContext";
 import { toast } from "@/shared/toast/ToastContext";
 import { useCompanionStore } from "@/store/useCompanionStore";
 import { ThemePreference, useTheme, useThemeControls } from "@/theme/tokens";
+import type { Database } from "@/types/supabase";
 
 const TITLES: Record<string, string> = {
   goals: "User Goals",
@@ -27,6 +31,7 @@ export const SettingsDetailScreen: React.FC = () => {
   const theme = useTheme();
   const { preference, setPreference } = useThemeControls();
   const { language, setLanguage } = useTranslation();
+  const authUser = useAuthStore((s) => s.user);
 
   const prayerAutoMute = useCompanionStore((s) => s.prayerAutoMute);
   const setPrayerAutoMute = useCompanionStore((s) => s.setPrayerAutoMute);
@@ -34,7 +39,43 @@ export const SettingsDetailScreen: React.FC = () => {
   const selectedGoals = useCompanionStore((s) => s.selectedGoals);
   const resetOnboarding = useCompanionStore((s) => s.resetOnboarding);
 
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [hideSensitivePreview, setHideSensitivePreview] = useState(true);
+  const [quietHoursEnabled, setQuietHoursEnabled] = useState(true);
+  const [dailyCap, setDailyCap] = useState<"3" | "6" | "10">("6");
+  const [isEvaluating, setIsEvaluating] = useState(false);
+
   const key = section ?? "appearance";
+
+  const syncNotificationPrefs = async (
+    patch: Database["public"]["Tables"]["user_preferences"]["Update"],
+  ) => {
+    const supabase = getSupabaseClient();
+    if (!supabase || !authUser) return;
+    await supabase
+      .from("user_preferences")
+      .update(patch)
+      .eq("user_id", authUser.id);
+  };
+
+  const handleEvaluateSmartNotifications = async () => {
+    const supabase = getSupabaseClient();
+    if (!supabase || !authUser) {
+      toast.info("Sign in to Cloud Backup & Sync to run cloud notification rules.");
+      return;
+    }
+    setIsEvaluating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("smart-notifications-cron");
+      if (error) throw new Error(error.message);
+      const sent = data?.result?.sent ?? 0;
+      toast.success(`Smart check complete (${sent} notification${sent === 1 ? "" : "s"} queued).`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Evaluation failed");
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
 
   return (
     <ScreenWrapper includeTabBarClearance={false}>
@@ -116,9 +157,9 @@ export const SettingsDetailScreen: React.FC = () => {
 
       {key === "privacy" ? (
         <GlassCard elevated padding={18} style={styles.card}>
-          <ThemedText variant="cardTitle">Local-First Privacy</ThemedText>
+          <ThemedText variant="cardTitle">Local-First Privacy & AI Controls</ThemedText>
           <ThemedText variant="body" color="secondary">
-            All tasks, habits, and preferences are stored locally in SQLite with zero external backend dependency.
+            Tasks, habits, and routines live locally in SQLite. When signed in, only summarized recent metrics are shared with the OpenAI coach upon request.
           </ThemedText>
           <Button
             title="Replay Onboarding"
@@ -140,10 +181,94 @@ export const SettingsDetailScreen: React.FC = () => {
 
       {key === "notifications" ? (
         <GlassCard elevated padding={18} style={styles.card}>
-          <ThemedText variant="cardTitle">Notifications & Alarms</ThemedText>
-          <ThemedText variant="body" color="secondary">
-            OS notification channels, quiet hours, and rolling prayer reminders will activate in Phase 3.
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <ThemedText variant="cardTitle">Gentle Notifications</ThemedText>
+              <ThemedText variant="caption" color="secondary">
+                Enable scheduled local & cloud smart reminders
+              </ThemedText>
+            </View>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={(val) => {
+                setNotificationsEnabled(val);
+                syncNotificationPrefs({ notifications_enabled: val });
+              }}
+              trackColor={{ false: theme.border, true: theme.primary }}
+            />
+          </View>
+
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <ThemedText variant="cardTitle">Hide Sensitive Previews</ThemedText>
+              <ThemedText variant="caption" color="secondary">
+                Mask private habit details on lock-screen alerts
+              </ThemedText>
+            </View>
+            <Switch
+              value={hideSensitivePreview}
+              onValueChange={(val) => {
+                setHideSensitivePreview(val);
+                syncNotificationPrefs({ privacy_hide_preview: val });
+              }}
+              trackColor={{ false: theme.border, true: theme.primary }}
+            />
+          </View>
+
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <ThemedText variant="cardTitle">Quiet Hours (22:30 – 05:30)</ThemedText>
+              <ThemedText variant="caption" color="secondary">
+                Pause non-urgent reminders while resting
+              </ThemedText>
+            </View>
+            <Switch
+              value={quietHoursEnabled}
+              onValueChange={(val) => {
+                setQuietHoursEnabled(val);
+                syncNotificationPrefs({
+                  quiet_hours_start: val ? "22:30" : null,
+                  quiet_hours_end: val ? "05:30" : null,
+                });
+              }}
+              trackColor={{ false: theme.border, true: theme.primary }}
+            />
+          </View>
+
+          <ThemedText variant="caption" color="secondary" weight="semiBold">
+            Daily Notification Cap
           </ThemedText>
+          <SegmentedControl<"3" | "6" | "10">
+            value={dailyCap}
+            onChange={(val) => {
+              setDailyCap(val);
+              syncNotificationPrefs({ max_notifications_per_day: Number(val) });
+            }}
+            options={[
+              { value: "3", label: "Max 3/day" },
+              { value: "6", label: "Max 6/day" },
+              { value: "10", label: "Max 10/day" },
+            ]}
+          />
+
+          <Button
+            title="Send Test Local Reminder"
+            variant="outline"
+            fullWidth
+            onPress={async () => {
+              const ok = await notificationService.sendTestNotification();
+              if (ok) toast.success("Test notification scheduled in 2 seconds");
+              else toast.info("Local notifications run on iOS & Android devices.");
+            }}
+          />
+
+          <Button
+            title="Run Smart Check-In Rules"
+            variant="gradient"
+            fullWidth
+            loading={isEvaluating}
+            onPress={handleEvaluateSmartNotifications}
+          />
         </GlassCard>
       ) : null}
     </ScreenWrapper>

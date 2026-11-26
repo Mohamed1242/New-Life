@@ -67,6 +67,16 @@ export const preferencesDb = {
     );
   },
 
+  async updateDisplayName(displayName: string): Promise<void> {
+    const clean = displayName.trim();
+    if (!clean) return;
+    const db = await getDatabase();
+    await db.runAsync(
+      "UPDATE user_preferences SET display_name = ?, updated_at = ? WHERE id = 1",
+      [clean, new Date().toISOString()],
+    );
+  },
+
   async updatePrayerAutoMute(enabled: boolean): Promise<void> {
     const db = await getDatabase();
     await db.runAsync(

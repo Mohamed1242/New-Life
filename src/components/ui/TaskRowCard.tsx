@@ -7,6 +7,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { SYSTEM_CATEGORIES } from "@/constants/categories";
 import { useTranslation } from "@/i18n";
 import type { TaskItem } from "@/modules/tasks/types/tasks.types";
+import { ACTIVITY_STATUS_LABELS } from "@/modules/tasks/utils/schedule";
 import { useTheme } from "@/theme/tokens";
 
 export interface TaskRowCardProps {
@@ -21,7 +22,7 @@ export const TaskRowCard: React.FC<TaskRowCardProps> = ({
   onPress,
 }) => {
   const theme = useTheme();
-  const { isRTL, t } = useTranslation();
+  const { isRTL } = useTranslation();
 
   const category =
     SYSTEM_CATEGORIES.find((c) => c.id === task.category) ?? SYSTEM_CATEGORIES[5];
@@ -31,8 +32,23 @@ export const TaskRowCard: React.FC<TaskRowCardProps> = ({
     onToggle(task.id);
   };
 
+  const statusSuffix =
+    task.status === "not_recorded"
+      ? task.timeLabel
+      : `${ACTIVITY_STATUS_LABELS[task.status]} · ${task.timeLabel}`;
+
+  const priorityColor =
+    task.priority === "high"
+      ? theme.error
+      : task.priority === "medium"
+        ? theme.warning
+        : theme.textMuted;
+
   return (
-    <GlassCard padding={14} onPress={onPress ? () => onPress(task) : handleToggle}>
+    <GlassCard
+      padding={14}
+      onPress={onPress ? () => onPress(task) : handleToggle}
+    >
       <View
         style={[
           styles.row,
@@ -49,23 +65,42 @@ export const TaskRowCard: React.FC<TaskRowCardProps> = ({
         </View>
 
         <View style={styles.textBlock}>
-          <ThemedText
-            variant="cardTitle"
+          <View
             style={[
-              task.completed && {
-                textDecorationLine: "line-through",
-                opacity: 0.6,
-              },
+              styles.titleRow,
+              { flexDirection: isRTL ? "row-reverse" : "row" },
             ]}
-            numberOfLines={1}
           >
-            {task.title}
-          </ThemedText>
-          <ThemedText variant="caption" color="secondary" numberOfLines={1}>
-            {task.completed
-              ? `${t("common.done", "Done")} · ${task.timeLabel}`
-              : task.timeLabel}
-          </ThemedText>
+            <ThemedText
+              variant="cardTitle"
+              style={[
+                styles.titleText,
+                task.completed && {
+                  textDecorationLine: "line-through",
+                  opacity: 0.6,
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {task.title}
+            </ThemedText>
+            {task.reminderEnabled ? (
+              <AppIcon name="bell" size={12} color={theme.primary} />
+            ) : null}
+          </View>
+
+          <View
+            style={[
+              styles.metaRow,
+              { flexDirection: isRTL ? "row-reverse" : "row" },
+            ]}
+          >
+            <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
+            <ThemedText variant="caption" color="secondary" numberOfLines={1}>
+              {statusSuffix}
+              {task.repeat !== "once" ? ` · ${task.repeat}` : ""}
+            </ThemedText>
+          </View>
         </View>
 
         <Pressable
@@ -76,13 +111,21 @@ export const TaskRowCard: React.FC<TaskRowCardProps> = ({
           style={[
             styles.checkCircle,
             {
-              borderColor: task.completed ? theme.success : theme.border,
+              borderColor: task.completed
+                ? theme.success
+                : task.status === "postponed" || task.status === "skipped"
+                  ? theme.warning
+                  : theme.border,
               backgroundColor: task.completed ? theme.success : "transparent",
             },
           ]}
         >
           {task.completed ? (
             <AppIcon name="check" size={14} color="#FFFFFF" strokeWidth={2.5} />
+          ) : task.status === "postponed" ? (
+            <AppIcon name="clock" size={13} color={theme.warning} />
+          ) : task.status === "skipped" ? (
+            <AppIcon name="skip-forward" size={13} color={theme.warning} />
           ) : null}
         </Pressable>
       </View>
@@ -106,10 +149,26 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  titleRow: {
+    alignItems: "center",
+    gap: 6,
+  },
+  titleText: {
+    flexShrink: 1,
+  },
+  metaRow: {
+    alignItems: "center",
+    gap: 6,
+  },
+  priorityDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
   checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 1.75,
     alignItems: "center",
     justifyContent: "center",

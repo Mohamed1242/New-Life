@@ -12,12 +12,14 @@ import { useTheme } from "@/theme/tokens";
 export interface HabitCardProps {
   habit: HabitItem;
   onToggle: (id: string) => void;
+  onPress?: (habit: HabitItem) => void;
   onLogUrge?: (id: string) => void;
 }
 
 export const HabitCard: React.FC<HabitCardProps> = ({
   habit,
   onToggle,
+  onPress,
   onLogUrge,
 }) => {
   const theme = useTheme();
@@ -33,7 +35,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   };
 
   return (
-    <GlassCard padding={14}>
+    <GlassCard padding={14} onPress={onPress ? () => onPress(habit) : undefined}>
       <View
         style={[
           styles.row,
@@ -61,8 +63,11 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           <ThemedText variant="cardTitle" numberOfLines={1}>
             {habit.title}
           </ThemedText>
-          <ThemedText variant="caption" color="secondary">
+          <ThemedText variant="caption" color="secondary" numberOfLines={1}>
             {habit.targetLabel} · {t("habits.streakDays", { count: habit.streakDays })}
+            {isNegative && habit.urgeCountToday > 0
+              ? ` · ${habit.urgeCountToday} urge${habit.urgeCountToday > 1 ? "s" : ""} paused`
+              : ""}
           </ThemedText>
         </View>
 
@@ -72,12 +77,12 @@ export const HabitCard: React.FC<HabitCardProps> = ({
             style={[
               styles.urgeChip,
               {
-                backgroundColor: theme.errorMuted,
-                borderColor: theme.error,
+                backgroundColor: theme.primaryMuted,
+                borderColor: theme.primary,
               },
             ]}
           >
-            <ThemedText variant="caption" color="error" weight="semiBold">
+            <ThemedText variant="caption" color="primary" weight="semiBold">
               {t("habits.logUrge", "Log Urge")}
             </ThemedText>
           </Pressable>

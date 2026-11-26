@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getTodayIso } from "@/core/utils/date";
-import { preferencesDb } from "@/modules/onboarding/services/preferences.db";
+import { preferencesDb } from "@/modules/onboarding/services/preferencesRepository";
 import type { CoachingTone } from "@/modules/onboarding/types/preferences.types";
 import { appLogger } from "@/shared/logger";
 
@@ -21,6 +21,7 @@ interface CompanionState {
     selectedGoals: string[];
     coachingTone: CoachingTone;
   }) => Promise<void>;
+  setDisplayName: (name: string) => Promise<void>;
   setPrayerAutoMute: (enabled: boolean) => Promise<void>;
   setSleepSchedule: (bedtime: string, wakeTime: string) => Promise<void>;
   resetOnboarding: () => Promise<void>;
@@ -77,6 +78,13 @@ export const useCompanionStore = create<CompanionState>((set) => ({
   setPrayerAutoMute: async (enabled) => {
     await preferencesDb.updatePrayerAutoMute(enabled);
     set({ prayerAutoMute: enabled });
+  },
+
+  setDisplayName: async (name) => {
+    const clean = name.trim();
+    if (!clean) return;
+    await preferencesDb.updateDisplayName(clean);
+    set({ userName: clean });
   },
 
   setSleepSchedule: async (bedtime, wakeTime) => {

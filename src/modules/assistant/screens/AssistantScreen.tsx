@@ -13,9 +13,9 @@ import { useTheme } from "@/theme/tokens";
 import { useAssistant } from "../hooks/useAssistant";
 
 const QUICK_PROMPTS = [
-  "Summarize my week",
-  "Plan my evening",
-  "Help me build a reading habit",
+  "Help me build a realistic morning routine",
+  "Why am I missing evening habits?",
+  "Suggest a gentle prayer reminder",
 ];
 
 export const AssistantScreen: React.FC = () => {
@@ -27,8 +27,11 @@ export const AssistantScreen: React.FC = () => {
     draft,
     setDraft,
     isResponding,
+    remainingToday,
     sendMessage,
-    resolveAction,
+    requestReview,
+    confirmAction,
+    dismissAction,
   } = useAssistant();
 
   return (
@@ -51,7 +54,23 @@ export const AssistantScreen: React.FC = () => {
           </ThemedText>
           <ThemedText variant="caption" color="secondary" center>
             {t("assistant.subtitle", "Always here to help you grow")}
+            {remainingToday !== null ? ` · ${remainingToday} AI checks left today` : ""}
           </ThemedText>
+
+          <View style={styles.reviewRow}>
+            <Button
+              title="Daily Review"
+              size="sm"
+              variant="glass"
+              onPress={() => requestReview("daily_review")}
+            />
+            <Button
+              title="Weekly Report"
+              size="sm"
+              variant="glass"
+              onPress={() => requestReview("weekly_review")}
+            />
+          </View>
         </View>
 
         <ScrollView
@@ -91,7 +110,14 @@ export const AssistantScreen: React.FC = () => {
                     {msg.text}
                   </ThemedText>
 
-                  {msg.actions && !msg.actionResolved ? (
+                  {msg.model && !isUser ? (
+                    <ThemedText variant="micro" color="muted" style={{ marginTop: 4 }}>
+                      {msg.model}
+                      {msg.cached ? " · cached" : ""}
+                    </ThemedText>
+                  ) : null}
+
+                  {msg.actions && msg.actions.length > 0 && !msg.actionResolved ? (
                     <View
                       style={[
                         styles.actionRow,
@@ -103,10 +129,16 @@ export const AssistantScreen: React.FC = () => {
                           key={act.id}
                           title={act.label}
                           size="sm"
-                          variant={act.kind === "primary" ? "primary" : "outline"}
-                          onPress={() => resolveAction(msg.id, act.label)}
+                          variant="primary"
+                          onPress={() => confirmAction(msg, act)}
                         />
                       ))}
+                      <Button
+                        title="Not Now"
+                        size="sm"
+                        variant="outline"
+                        onPress={() => dismissAction(msg)}
+                      />
                     </View>
                   ) : null}
                 </GlassCard>
@@ -197,6 +229,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 2,
   },
+  reviewRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 6,
+  },
   chatScroll: {
     flex: 1,
   },
@@ -208,8 +245,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   bubble: {
-    maxWidth: "86%",
-    gap: 10,
+    maxWidth: "88%",
+    gap: 8,
   },
   actionRow: {
     flexWrap: "wrap",
